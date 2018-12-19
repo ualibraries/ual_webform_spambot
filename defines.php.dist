@@ -1,0 +1,3 @@
+<?php
+define("UAL_WEBFORM_SPAMBOT_FORM_ID", "");
+define("UAL_WEBFORM_SPAMBOT_EMAIL_ADDRESS_FIELD", "");

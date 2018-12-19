@@ -1,0 +1,5 @@
+name = UAL Webform Spambot
+description = Checks Webform submissions against http://www.stopforumspam.com/
+core = 7.x
+package = UAL Custom
+dependencies[] = spambot

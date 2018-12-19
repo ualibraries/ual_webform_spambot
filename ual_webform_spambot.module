@@ -1,0 +1,54 @@
+<?php
+require_once "defines.php";
+/**
+ * Implements  hook_form_alter()
+ */
+function ual_webform_spambot_form_alter(&$form, &$form_state, $form_id) {
+  // Contact Us form
+  if($form_id == UAL_WEBFORM_SPAMBOT_FORM_ID) {
+    $form['#validate'][] = '_ual_webform_spambot_spam_check';
+  }
+}
+
+function _ual_webform_spambot_spam_check($form, &$form_state) {
+  $ip = ip_address();
+  $email = $form_state['values']['submitted'][UAL_WEBFORM_SPAMBOT_EMAIL_ADDRESS_FIELD];
+  $request['email'] = $email;
+  $request['ip'] = $ip;
+
+  $email_threshold = variable_get('spambot_criteria_email', SPAMBOT_DEFAULT_CRITERIA_EMAIL);
+  $ip_threshold = variable_get('spambot_criteria_ip', SPAMBOT_DEFAULT_CRITERIA_IP);
+
+  $data = array();
+
+  if (spambot_sfs_request($request, $data)) {
+    $reasons = array();
+    $substitutions = array(
+      '@email' => $email,
+      '%email' => $email,
+      '@ip' => $ip,
+      '%ip' => $ip,
+    );
+    if ($email_threshold > 0 && !empty($data['email']['appears']) && $data['email']['frequency'] >= $email_threshold) {
+      form_set_error('mail', format_string(variable_get('spambot_blocked_message_email', SPAMBOT_DEFAULT_BLOCKED_MESSAGE), $substitutions));
+      $reasons[] = t('email=@value', array('@value' => $request['email']));
+    }
+    if ($ip_threshold > 0 && !empty($data['ip']['appears']) && $data['ip']['frequency'] >= $ip_threshold) {
+      form_set_error('', format_string(variable_get('spambot_blocked_message_ip', SPAMBOT_DEFAULT_BLOCKED_MESSAGE), $substitutions));
+      $reasons[] = t('ip=@value', array('@value' => $request['ip']));
+    }
+
+    if ($reasons) {
+      if (variable_get('spambot_log_blocked_registration', TRUE)) {
+        watchdog('spambot', 'Blocked registration: @reasons', array('@reasons' => implode(',', $reasons)));
+
+        $hook_args = array(
+          'request' => $request,
+          'reasons' => $reasons,
+        );
+        module_invoke_all('spambot_registration_blocked', $hook_args);
+      }
+
+    }
+  }
+}
