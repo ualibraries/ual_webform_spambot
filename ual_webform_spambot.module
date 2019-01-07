@@ -1,18 +1,18 @@
 <?php
-require_once "defines.php";
 /**
  * Implements  hook_form_alter()
  */
 function ual_webform_spambot_form_alter(&$form, &$form_state, $form_id) {
   // Contact Us form
-  if($form_id == UAL_WEBFORM_SPAMBOT_FORM_ID) {
+  if($form_id == variable_get('ual_webform_spambot_form_id')) {
     $form['#validate'][] = '_ual_webform_spambot_spam_check';
   }
 }
 
 function _ual_webform_spambot_spam_check($form, &$form_state) {
   $ip = ip_address();
-  $email = $form_state['values']['submitted'][UAL_WEBFORM_SPAMBOT_EMAIL_ADDRESS_FIELD];
+  $email_address_field = variable_get('ual_webform_spambot_email_field');
+  $email = $form_state['values']['submitted'][$email_address_field];
   $request['email'] = $email;
   $request['ip'] = $ip;
 
@@ -50,5 +50,21 @@ function _ual_webform_spambot_spam_check($form, &$form_state) {
       }
 
     }
+  }
+
+}
+
+/**
+ * Implements hook_install()
+ */
+function ual_webform_spambot_install() {
+  if(variable_get('ual_webform_spambot_form_id') == NULL) {
+    // Library Main Website "Contact Us" form
+    variable_set('ual_webform_spambot_form_id', 'webform_client_form_41');
+  }
+
+  if(variable_get('ual_webform_spambot_email_field') == NULL) {
+    // Email field name on Library Main Website "Contact Us" form
+    variable_set('ual_webform_spambot_email_field', 'your_email');
   }
 }
